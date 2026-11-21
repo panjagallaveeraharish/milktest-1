@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Add milk record{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <p class="eyebrow">Daily delivery</p><h1>Add or update milk record</h1><p class="muted">One record per provider and date. Saving again updates that record.</p>
+</section>
+{% if not providers %}
+<section class="empty-page"><span class="card-icon">＋</span><h2>Add a provider first</h2><p class="muted">Register a milk provider to start recording deliveries.</p><a class="button primary" href="{{ url_for('providers_page') }}">Go to providers</a></section>
+{% else %}
+<form class="entry-form" method="post" action="{{ url_for('daily_entry') }}" data-daily-form data-rate-paise="{{ selected_provider.rate_paise_per_litre if selected_provider else 5500 }}">
+  <div class="date-picker">
+    <label for="provider">Milk provider</label>
+    <select id="provider" name="provider_id" required>
+      {% for provider in providers %}<option value="{{ provider.id }}" {% if selected_provider_id == provider.id %}selected{% endif %}>{{ provider.name }}{% if not provider.is_active %} (archived){% endif %}</option>{% endfor %}
+    </select>
+    <label for="record-date">Delivery date</label><input id="record-date" type="date" name="date" value="{{ selected_date }}" required>
+    <button class="button secondary" type="button" data-load-date>Load record</button>
+  </div>
+  {% if selected_provider and (selected_provider.is_active or record) %}
+  {% if not selected_provider.is_active %}<p class="alert error">This provider is archived. You can correct this saved record, but cannot create new records for this provider.</p>{% endif %}
+  {% if selected_provider %}
+  <p class="rate-note">Custom quantity rate for {{ selected_provider.name }}: {{ selected_provider.rate_paise_per_litre|money }} per litre. Listed pack prices are applied exactly.</p>
+  {% endif %}
+  <div class="entry-grid">
+    {% for session, label, icon in [('morning', 'Morning delivery', '☀'), ('evening', 'Evening delivery', '☾')] %}
+      <section class="entry-card">
+        <div class="entry-title"><span class="card-icon">{{ icon }}</span><div><h2>{{ label }}</h2><p class="muted">Enter the delivered amount in litres.</p></div></div>
+        <label for="{{ session }}-litres">Quantity (litres)</label>
+        <input id="{{ session }}-litres" name="{{ session }}_litres" type="number" min="0" max="100" step="0.001" value="{{ ('%.3f'|format(record[session + '_ml'] / 1000)) if record else '0' }}" required inputmode="decimal" data-litre-entry>
+        <div class="calculation"><span>Session amount</span><strong data-session-amount>{{ record[session + '_amount_paise']|money if record else '₹0.00' }}</strong></div>
+      </section>
+    {% endfor %}
+  </div>
+  <div class="daily-live-total"><span>Daily total</span><strong data-daily-total-quantity>0 L</strong><span>Estimated amount</span><strong data-daily-total-amount>₹0.00</strong></div>
+  <div class="form-actions"><button class="button primary" type="submit">Save milk record</button><a class="button light" href="{{ url_for('records_page', provider_id=selected_provider_id) }}">View daily records</a></div>
+</form>
+{% if record %}
+<section class="delete-panel">
+  <div><h2>Delete this record?</h2><p class="muted">This removes both morning and evening entries for {{ selected_provider.name }} on {{ selected_date }}.</p></div>
+  <form method="post" action="{{ url_for('remove_record', provider_id=selected_provider_id, record_date=selected_date) }}" data-confirm="Delete this provider's record for this date?"><button class="button danger" type="submit">Delete record</button></form>
+</section>
+{% endif %}
+<p class="rate-note">Preset rates: 1 L ₹55 · 750 ml ₹41.50 · 500 ml ₹33 · 250 ml ₹16. Complete preset quantities use their listed prices; custom remainder uses the provider's per-litre rate. Precision is up to 1 ml.</p>
+{% else %}
+<p class="alert error">This provider is archived and has no saved record for this date. Restore the provider before adding a delivery.</p>
+{% endif %}
+{% endif %}
+{% endblock %}

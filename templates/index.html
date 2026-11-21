@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<section class="page-heading heading-row">
+  <div><p class="eyebrow">{{ today }}</p><h1>Milk management dashboard</h1><p class="muted">Provider deliveries, daily totals, and monthly payable in one place.</p></div>
+  <a class="button primary" href="{{ url_for('daily_entry') }}">＋ Add milk record</a>
+</section>
+<section class="section-block">
+  <div class="section-title"><div><h2>Today</h2><p class="muted">Combined deliveries from all active and archived providers.</p></div></div>
+  <div class="card-grid four">
+    <article class="summary-card"><span class="card-icon">◉</span><p>Total providers</p><strong>{{ provider_count }}</strong><small>Active providers</small></article>
+    <article class="summary-card"><span class="card-icon">☀</span><p>Morning milk</p><strong>{{ today_morning_ml|quantity }}</strong><small>{{ today_morning_ml }} ml</small></article>
+    <article class="summary-card"><span class="card-icon">☾</span><p>Evening milk</p><strong>{{ today_evening_ml|quantity }}</strong><small>{{ today_evening_ml }} ml</small></article>
+    <article class="summary-card green-card"><span class="card-icon">◷</span><p>Today's total milk</p><strong>{{ today_total_ml|quantity }}</strong><small>{{ today_total_ml }} ml combined</small></article>
+  </div>
+</section>
+<section class="section-block">
+  <div class="section-title"><div><h2>This month</h2><p class="muted">Payable amount is calculated from saved daily provider records.</p></div><a class="text-link" href="{{ url_for('monthly_report') }}">View reports →</a></div>
+  <div class="card-grid two">
+    <article class="summary-card green-card"><span class="card-icon">◉</span><p>Total milk</p><strong>{{ monthly_ml|quantity }}</strong><small>{{ monthly_ml }} ml this month</small></article>
+    <article class="summary-card"><span class="card-icon">₹</span><p>Current month's payable</p><strong>{{ monthly_amount|money }}</strong><small>All providers this month</small></article>
+  </div>
+</section>
+<section class="section-block table-panel provider-directory">
+  <div class="table-heading">
+    <div><h2>Milk providers</h2><p class="muted">{{ providers|length }} provider profile{{ '' if providers|length == 1 else 's' }} · select a name to open its records</p></div>
+    <a class="button secondary" href="{{ url_for('providers_page') }}">Manage providers</a>
+  </div>
+  <div class="provider-search">
+    <label class="sr-only" for="provider-search">Search providers by name</label>
+    <input id="provider-search" type="search" placeholder="Search providers by name…" data-provider-search>
+  </div>
+  <div class="provider-list" data-provider-list>
+    {% for provider in providers %}
+    <a class="provider-list-item" href="{{ url_for('provider_detail', provider_id=provider.id) }}" data-provider-item data-provider-name="{{ provider.name|lower }}">
+      <span class="provider-avatar">{{ provider.name[:1]|upper }}</span>
+      <span class="provider-list-name"><strong>{{ provider.name }}</strong><small>Provider ID {{ provider.id }}{% if provider.phone %} · {{ provider.phone }}{% endif %}</small></span>
+      {% if not provider.is_active %}<span class="status missing">Archived</span>{% endif %}
+      <span class="provider-arrow" aria-hidden="true">→</span>
+    </a>
+    {% else %}
+    <p class="empty-state">No providers yet. <a href="{{ url_for('providers_page') }}">Add your first provider</a>.</p>
+    {% endfor %}
+  </div>
+  <p class="empty-state" data-provider-no-results hidden>No provider names match your search.</p>
+</section>
+<section class="section-block search-panel">
+  <div><h2>Getting started</h2><p class="muted">{% if providers %}{{ provider_count }} provider{{ '' if provider_count == 1 else 's' }} ready. Add a delivery or review payments.{% else %}Add your first provider before recording a delivery.{% endif %}</p></div>
+  <div class="inline-form"><a class="button secondary" href="{{ url_for('providers_page') }}">Manage providers</a><a class="button secondary" href="{{ url_for('payments_page') }}">Record payment</a></div>
+</section>
+<div class="utility-links"><a href="{{ url_for('download_backup') }}">Download database backup</a><span>Keep a copy of your records somewhere safe.</span></div>
+{% endblock %}

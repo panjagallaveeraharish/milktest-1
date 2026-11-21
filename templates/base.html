@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#187653">
+  <title>{% block title %}Milk Ledger{% endblock %} · Milk Ledger</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">M</span><span>Milk Ledger<small>Daily records, made simple</small></span></a>
+    <nav aria-label="Main navigation">
+      <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">Dashboard</a>
+      <a href="{{ url_for('providers_page') }}" class="{% if request.endpoint == 'providers_page' %}active{% endif %}">Providers</a>
+      <a href="{{ url_for('daily_entry') }}" class="{% if request.endpoint == 'daily_entry' %}active{% endif %}">Add milk</a>
+      <a href="{{ url_for('records_page') }}" class="{% if request.endpoint == 'records_page' %}active{% endif %}">Daily records</a>
+      <a href="{{ url_for('monthly_report') }}" class="{% if request.endpoint == 'monthly_report' %}active{% endif %}">Monthly reports</a>
+      <a href="{{ url_for('payments_page') }}" class="{% if request.endpoint == 'payments_page' %}active{% endif %}">Payments</a>
+    </nav>
+  </header>
+  <main class="page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<div class="alerts">{% for category, message in messages %}<div class="alert {{ category }}" role="status">{{ message }}</div>{% endfor %}</div>{% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">Milk Ledger <span>·</span> Your records stay in your local SQLite database.</footer>
+</body>
+</html>

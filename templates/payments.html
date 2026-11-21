@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Payments{% endblock %}
+{% block content %}
+<section class="page-heading"><p class="eyebrow">Provider settlement</p><h1>Payments</h1><p class="muted">Record payments against a provider and billing month. Partial payments are supported.</p></section>
+{% if not providers %}
+<section class="empty-page"><h2>No active providers</h2><p class="muted">Add or restore a provider to record payments.</p><a class="button primary" href="{{ url_for('providers_page') }}">Manage providers</a></section>
+{% else %}
+<form class="month-filter" method="get" action="{{ url_for('payments_page') }}">
+  <label for="payment-provider-filter">Provider</label><select id="payment-provider-filter" name="provider_id">{% for provider in providers %}<option value="{{ provider.id }}" {% if selected_provider_id == provider.id %}selected{% endif %}>{{ provider.name }}{% if not provider.is_active %} (archived){% endif %}</option>{% endfor %}</select>
+  <label for="payment-month-filter">Month</label><select id="payment-month-filter" name="month">{% for number in range(1, 13) %}<option value="{{ number }}" {% if month == number %}selected{% endif %}>{{ months[number - 1] }}</option>{% endfor %}</select>
+  <label for="payment-year-filter">Year</label><input id="payment-year-filter" type="number" name="year" min="1900" max="9999" value="{{ year }}" required>
+  <button class="button primary" type="submit">Show payments</button>
+</form>
+<div class="card-grid three report-summary">
+  <article class="summary-card"><p>{{ selected_provider.name if selected_provider else 'Provider' }} payable</p><strong>{{ payable|money }}</strong><small>For {{ months[month - 1] }} {{ year }}</small></article>
+  <article class="summary-card green-card"><p>Amount paid</p><strong>{{ paid|money }}</strong><small>Payments allocated to this month</small></article>
+  <article class="summary-card"><p>Remaining balance</p><strong>{{ balance|money }}</strong><small>{{ 'Overpaid' if balance < 0 else 'Due' if balance > 0 else 'Settled' }}</small></article>
+</div>
+<div class="provider-layout">
+  <section class="entry-card">
+    <h2>Record a payment</h2>
+    <form method="post" action="{{ url_for('payments_page') }}" class="stack-form">
+      <label for="payment-provider">Provider</label><select id="payment-provider" name="provider_id" required>{% for provider in providers %}<option value="{{ provider.id }}" {% if selected_provider_id == provider.id %}selected{% endif %}>{{ provider.name }}{% if not provider.is_active %} (archived){% endif %}</option>{% endfor %}</select>
+      <label for="payment-month">Apply to month</label><div class="month-fields"><select id="payment-month" name="month">{% for number in range(1, 13) %}<option value="{{ number }}" {% if month == number %}selected{% endif %}>{{ months[number - 1] }}</option>{% endfor %}</select><input aria-label="Billing year" type="number" name="year" min="1900" max="9999" value="{{ year }}" required></div>
+      <label for="payment-date">Payment date</label><input id="payment-date" type="date" name="payment_date" value="{{ today }}" required>
+      <label for="payment-amount">Amount (₹)</label><input id="payment-amount" type="number" name="amount" min="0.01" step="0.01" required placeholder="e.g. 1000.00">
+      <label for="payment-note">Note <span class="muted">(optional)</span></label><input id="payment-note" name="note" maxlength="250" placeholder="Reference or details">
+      <button class="button primary" type="submit">Save payment</button>
+    </form>
+  </section>
+  <section class="table-panel">
+    <div class="table-heading"><div><h2>{{ months[month - 1] }} payments</h2><p class="muted">{{ selected_provider.name if selected_provider else '' }}</p></div></div>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Payment date</th><th>Amount</th><th>Note</th><th>Action</th></tr></thead>
+      <tbody>{% for payment in payments %}<tr><td>{{ payment.payment_date }}</td><td><strong>{{ payment.amount_paise|money }}</strong></td><td>{{ payment.note or '—' }}</td><td><form method="post" action="{{ url_for('remove_payment', payment_id=payment.id) }}" data-confirm="Delete this payment entry?"><button class="button danger small-button" type="submit">Delete</button></form></td></tr>{% else %}<tr><td colspan="4" class="empty-state">No payments recorded for this billing month.</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+</div>
+{% endif %}
+{% endblock %}

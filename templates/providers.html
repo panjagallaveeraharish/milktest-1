@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Providers{% endblock %}
+{% block content %}
+<section class="page-heading"><p class="eyebrow">Provider directory</p><h1>Milk providers</h1><p class="muted">Add up to {{ provider_limit }} active providers. Archiving keeps historical deliveries and payments.</p></section>
+<div class="provider-layout">
+  <section class="entry-card">
+    <h2>{{ 'Edit provider' if editing else 'Add a provider' }}</h2>
+    <form method="post" action="{{ url_for('providers_page') }}" class="stack-form">
+      <input type="hidden" name="action" value="{{ 'edit' if editing else 'add' }}">
+      {% if editing %}<input type="hidden" name="provider_id" value="{{ editing.id }}">{% endif %}
+      <label for="provider-name">Provider name <span class="required">*</span></label>
+      <input id="provider-name" name="name" maxlength="100" value="{{ editing.name if editing else '' }}" required placeholder="e.g. Green Valley Dairy">
+      <label for="provider-phone">Phone number <span class="muted">(optional)</span></label>
+      <input id="provider-phone" name="phone" type="tel" maxlength="30" value="{{ editing.phone if editing else '' }}" placeholder="Contact number">
+      <label for="provider-rate">Custom quantity rate (₹ per litre)</label>
+      <input id="provider-rate" name="rate_per_litre" type="number" min="0.01" step="0.01" value="{{ '%.2f'|format(editing.rate_paise_per_litre / 100) if editing else '55.00' }}" required>
+      <p class="muted small">The 1 L, 500 ml, and 250 ml pack rates stay fixed. This rate applies to other quantities.</p>
+      <div class="form-actions"><button class="button primary" type="submit">{{ 'Save changes' if editing else 'Add provider' }}</button>{% if editing %}<a class="button light" href="{{ url_for('providers_page') }}">Cancel</a>{% endif %}</div>
+    </form>
+  </section>
+  <section class="table-panel">
+    <div class="table-heading"><div><h2>Registered providers</h2><p class="muted">{{ active_count }} of {{ provider_limit }} active</p></div></div>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Name</th><th>Phone</th><th>Custom rate</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>{% for provider in providers %}
+        <tr><td><strong>{{ provider.name }}</strong><small>ID {{ provider.id }}</small></td><td>{{ provider.phone or '—' }}</td><td>{{ provider.rate_paise_per_litre|money }}/L</td><td><span class="status {{ 'recorded' if provider.is_active else 'missing' }}">{{ 'Active' if provider.is_active else 'Archived' }}</span></td>
+          <td class="action-cell"><a class="text-link" href="{{ url_for('providers_page', edit=provider.id) }}">Edit</a>
+            <form method="post" action="{{ url_for('providers_page') }}" data-confirm="{{ 'Restore this provider?' if not provider.is_active else 'Archive this provider? Historical records will be preserved.' }}"><input type="hidden" name="action" value="{{ 'restore' if not provider.is_active else 'archive' }}"><input type="hidden" name="provider_id" value="{{ provider.id }}"><button class="button small-button {{ 'secondary' if not provider.is_active else 'danger' }}" type="submit">{{ 'Restore' if not provider.is_active else 'Archive' }}</button></form>
+          </td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="empty-state">No providers yet. Add one using the form.</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+</div>
+{% endblock %}
